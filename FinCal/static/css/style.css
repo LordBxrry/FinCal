@@ -1,0 +1,451 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    background: #f2f5fb;
+    color: #111827;
+}
+
+header {
+    padding: 24px;
+    background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+    color: white;
+    text-align: center;
+}
+
+.hero-note {
+    margin-top: 12px;
+    font-size: 1rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    opacity: 0.9;
+}
+
+.brand {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.subtitle {
+    margin-top: 8px;
+    opacity: 0.9;
+}
+
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.summary-panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
+}
+
+.summary-card h3 {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+.summary-card p {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.encouragement-panel {
+    margin-bottom: 24px;
+}
+
+.encouragement-card {
+    min-height: 120px;
+}
+
+.goal-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.net-positive {
+    border-color: #16a34a;
+    background: #ecfdf5;
+}
+
+.net-negative {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.net-zero {
+    border-color: #d1d5db;
+    background: #f8fafc;
+}
+
+.daily-summary .net-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.daily-summary .net-label {
+    margin-top: 6px;
+    opacity: 0.8;
+    font-size: 0.85rem;
+}
+
+.transaction-item .details div {
+    margin-top: 4px;
+}
+
+.calendar-panel {
+    margin-bottom: 24px;
+}
+
+.month-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.month-header button {
+    border: none;
+    background: #2563eb;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+#currentMonth {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.calendar-cell {
+    background: white;
+    border-radius: 18px;
+    min-height: 120px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.calendar-cell.empty {
+    background: transparent;
+    border: none;
+}
+
+.calendar-cell .date-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+}
+
+.calendar-cell .daily-summary {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.transaction-panel {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 24px;
+}
+
+.form-card, .list-card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
+}
+
+.form-card h2, .list-card h2 {
+    margin-top: 0;
+}
+
+.form-card label {
+    display: block;
+    margin: 16px 0 6px;
+    font-weight: 600;
+}
+
+.form-card input,
+.form-card select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #f9fafb;
+}
+
+.form-card button {
+    margin-top: 20px;
+    width: 100%;
+    border: none;
+    background: #2563eb;
+    color: white;
+    padding: 14px;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.button-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.form-card .button-row button {
+    width: auto;
+    flex: 1;
+}
+
+.secondary {
+    background: #6b7280;
+}
+
+.action-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.action-group button {
+    width: auto;
+    padding: 8px 12px;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.list-header button {
+    border: none;
+    background: #0f172a;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+#transactionList {
+    display: grid;
+    gap: 12px;
+}
+
+.transaction-item {
+    padding: 16px;
+    border-radius: 18px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+}
+
+.transaction-item .details {
+    max-width: 70%;
+}
+
+.transaction-item .details strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 6px;
+}
+
+.transaction-item button {
+    border: none;
+    background: #ef4444;
+    color: white;
+    padding: 8px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .summary-panel, .transaction-panel, .membership-panel, .goal-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+.membership-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.membership-card,
+.group-card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
+}
+
+.membership-card h2,
+.group-card h2 {
+    margin-top: 0;
+}
+
+.card-note {
+    margin: 16px 0 0;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.benefits-list {
+    margin: 16px 0;
+    padding-left: 20px;
+    color: #111827;
+}
+
+.benefits-list li {
+    margin-bottom: 8px;
+}
+
+.upgrade-cta {
+    margin-top: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+.event-panel {
+    margin-bottom: 24px;
+}
+
+.user-panel {
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.user-card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
+}
+
+.user-card h2 {
+    margin-top: 0;
+}
+
+.help-panel {
+    margin-bottom: 24px;
+}
+
+.help-card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
+}
+
+.help-card h2 {
+    margin-top: 0;
+}
+
+.help-list {
+    margin: 16px 0 0;
+    padding-left: 20px;
+    color: #111827;
+}
+
+.help-list li {
+    margin-bottom: 10px;
+}
+
+.auth-switch {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.auth-switch-button {
+    flex: 1;
+    border: 1px solid #d1d5db;
+    background: #f8fafc;
+    color: #111827;
+    padding: 10px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+}
+
+.auth-switch-button.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+.form-error {
+    color: #ef4444;
+    margin-top: 10px;
+    min-height: 20px;
+}
+
+.user-card .action-row {
+    justify-content: flex-start;
+}
+
+.user-card button.secondary {
+    background: #6b7280;
+}
+
+.user-card form {
+    margin-top: 16px;
+}
+
+.user-card input {
+    margin-bottom: 12px;
+}
+
+.action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
