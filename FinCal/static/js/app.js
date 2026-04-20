@@ -74,9 +74,45 @@ const wishNotesInput = document.getElementById('wishNotes');
 const wishlistFormHeading = document.getElementById('wishlistFormHeading');
 const wishlistSubmitBtn = document.getElementById('wishlistSubmit');
 const cancelWishlistEdit = document.getElementById('cancelWishlistEdit');
+const incomeBreakdownList = document.getElementById('incomeBreakdownList');
+const incomeBreakdownForm = document.getElementById('incomeBreakdownForm');
+const showIncomeBreakdownFormBtn = document.getElementById('showIncomeBreakdownForm');
+const incomeNameInput = document.getElementById('incomeName');
+const incomeTypeInput = document.getElementById('incomeType');
+const incomeValueInput = document.getElementById('incomeValue');
+const incomeValueLabel = document.getElementById('incomeValueLabel');
+const incomeFormHeading = document.getElementById('incomeFormHeading');
+const incomeBreakdownSubmitBtn = document.getElementById('incomeBreakdownSubmit');
+const cancelIncomeEdit = document.getElementById('cancelIncomeEdit');
+const allocationBreakdownDisplay = document.getElementById('allocationBreakdown');
+const allocationForm = document.getElementById('allocationForm');
+const showAllocationFormBtn = document.getElementById('showAllocationForm');
+const allocationTypeInput = document.getElementById('allocationType');
+const needsAmountInput = document.getElementById('needsAmount');
+const wantsAmountInput = document.getElementById('wantsAmount');
+const savingsAmountInput = document.getElementById('savingsAmount');
+const needsLabel = document.getElementById('needsLabel');
+const wantsLabel = document.getElementById('wantsLabel');
+const savingsLabel = document.getElementById('savingsLabel');
+const allocationSubmitBtn = document.getElementById('allocationSubmit');
+const cancelAllocationEdit = document.getElementById('cancelAllocationEdit');
+
+const billsList = document.getElementById('billsList');
+const billsTotal = document.getElementById('billsTotal');
+const billForm = document.getElementById('billForm');
+const showBillForm = document.getElementById('showBillForm');
+const billName = document.getElementById('billName');
+const billAmount = document.getElementById('billAmount');
+const billFrequency = document.getElementById('billFrequency');
+const billDueDate = document.getElementById('billDueDate');
+const billCategory = document.getElementById('billCategory');
+const billSubmit = document.getElementById('billSubmit');
+const cancelBillEdit = document.getElementById('cancelBillEdit');
 
 let editingGoalId = null;
 let editingWishlistId = null;
+let editingIncomeId = null;
+let editingBillId = null;
 
 // Stripe integration
 let stripe;
@@ -99,6 +135,9 @@ function defaultState() {
         events: [],
         wishlist: [],
         goals: [],
+        incomeBreakdown: [],
+        allocation: { type: 'percentage', needs: 50, wants: 30, savings: 20 },
+        bills: [],
         users: [],
         user: { signedIn: false, email: '', name: '' },
     };
@@ -121,6 +160,20 @@ function normalizeState(state) {
         goals: Array.isArray(state.goals) ? state.goals.map(goal => ({
             ...goal,
             id: goal.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        })) : [],
+        incomeBreakdown: Array.isArray(state.incomeBreakdown) ? state.incomeBreakdown.map(source => ({
+            ...source,
+            id: source.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        })) : [],
+        allocation: state.allocation ? {
+            type: state.allocation.type || 'percentage',
+            needs: Number(state.allocation.needs) || 50,
+            wants: Number(state.allocation.wants) || 30,
+            savings: Number(state.allocation.savings) || 20,
+        } : { type: 'percentage', needs: 50, wants: 30, savings: 20 },
+        bills: Array.isArray(state.bills) ? state.bills.map(bill => ({
+            ...bill,
+            id: bill.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         })) : [],
         users: Array.isArray(state.users) ? state.users.map(user => ({
             ...user,
@@ -201,6 +254,66 @@ function deleteGoal(id) {
     state.goals = state.goals.filter(goal => goal.id !== id);
     saveState(state);
     render();
+}
+
+function addIncomeSource(source) {
+    const state = loadState();
+    state.incomeBreakdown.push(source);
+    saveState(state);
+}
+
+function deleteIncomeSource(id) {
+    const state = loadState();
+    state.incomeBreakdown = state.incomeBreakdown.filter(source => source.id !== id);
+    saveState(state);
+    render();
+}
+
+function addBill(bill) {
+    const state = loadState();
+    const newBill = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name: bill.name,
+        amount: Number(bill.amount),
+        frequency: bill.frequency,
+        dueDate: Number(bill.dueDate),
+        category: bill.category,
+        createdAt: new Date().toISOString(),
+    };
+    state.bills.push(newBill);
+    saveState(state);
+}
+
+function deleteBill(id) {
+    const state = loadState();
+    state.bills = state.bills.filter(bill => bill.id !== id);
+    saveState(state);
+    if (editingBillId === id) {
+        clearBillEdit();
+    }
+    render();
+}
+
+function beginBillEdit(id) {
+    const state = loadState();
+    const bill = state.bills.find(b => b.id === id);
+    if (bill) {
+        editingBillId = id;
+        billName.value = bill.name;
+        billAmount.value = bill.amount;
+        billFrequency.value = bill.frequency;
+        billDueDate.value = bill.dueDate;
+        billCategory.value = bill.category;
+        billForm.classList.remove('hidden');
+        billSubmit.textContent = 'Update Bill';
+    }
+}
+
+function clearBillEdit() {
+    editingBillId = null;
+    billForm.classList.add('hidden');
+    billForm.reset();
+    billSubmit.textContent = 'Save Bill';
 }
 
 function updateMembership(membership) {
@@ -792,6 +905,219 @@ function renderWishlist(state) {
     });
 }
 
+function renderIncomeBreakdown(state) {
+    incomeBreakdownList.innerHTML = '';
+    if (state.incomeBreakdown.length === 0) {
+        incomeBreakdownList.innerHTML = '<p class="card-note">No income sources yet. Add your income streams to track where your money comes from.</p>';
+        return;
+    }
+
+    const fixedTotal = state.incomeBreakdown
+        .filter(s => s.type === 'fixed')
+        .reduce((sum, s) => sum + Number(s.value), 0);
+    const percentageTotal = state.incomeBreakdown
+        .filter(s => s.type === 'percentage')
+        .reduce((sum, s) => sum + Number(s.value), 0);
+
+    state.incomeBreakdown.forEach(source => {
+        const listItem = document.createElement('div');
+        listItem.className = 'transaction-item';
+        
+        let valueDisplay = source.type === 'fixed' 
+            ? `${formatCurrency(source.value)}`
+            : `${Number(source.value).toFixed(1)}%`;
+        
+        listItem.innerHTML = `
+            <div class="details">
+                <strong>${source.name}</strong>
+                <div>${source.type === 'fixed' ? 'Fixed' : 'Percentage'}</div>
+                <div class="income-value">${valueDisplay}</div>
+                ${percentageTotal > 100 && source.type === 'percentage' ? '<div class="income-warning">⚠️ Total percentage exceeds 100%</div>' : ''}
+            </div>
+            <div class="action-group">
+                <button data-action="edit" data-id="${source.id}">Edit</button>
+                <button data-action="delete" data-id="${source.id}">Delete</button>
+            </div>
+        `;
+        listItem.querySelector('button[data-action="delete"]').addEventListener('click', () => deleteIncomeSource(source.id));
+        listItem.querySelector('button[data-action="edit"]').addEventListener('click', () => beginIncomeEdit(source.id));
+        incomeBreakdownList.appendChild(listItem);
+    });
+}
+
+function renderAllocationBreakdown(state) {
+    allocationBreakdownDisplay.innerHTML = '';
+    const allocation = state.allocation;
+    const visibleTransactions = getVisibleTransactions(state.transactions, currentDate);
+    
+    const inflow = visibleTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
+    const needs = visibleTransactions.filter(t => t.type === 'expense' && t.category === 'needs').reduce((sum, t) => sum + Number(t.amount), 0);
+    const wants = visibleTransactions.filter(t => t.type === 'expense' && t.category === 'wants').reduce((sum, t) => sum + Number(t.amount), 0);
+    const savings = visibleTransactions.filter(t => t.type === 'expense' && t.category === 'savings').reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const allocatedNeeds = allocation.type === 'percentage' ? (inflow * allocation.needs / 100) : allocation.needs;
+    const allocatedWants = allocation.type === 'percentage' ? (inflow * allocation.wants / 100) : allocation.wants;
+    const allocatedSavings = allocation.type === 'percentage' ? (inflow * allocation.savings / 100) : allocation.savings;
+
+    const needsPercent = inflow > 0 ? Math.round((needs / inflow) * 100) : 0;
+    const wantsPercent = inflow > 0 ? Math.round((wants / inflow) * 100) : 0;
+    const savingsPercent = inflow > 0 ? Math.round((savings / inflow) * 100) : 0;
+
+    const allocationHtml = `
+        <div class="allocation-summary">
+            <div class="allocation-stat">
+                <h4>Income</h4>
+                <p class="allocation-amount">${formatCurrency(inflow)}</p>
+            </div>
+            <div class="allocation-categories">
+                <div class="allocation-category needs">
+                    <div class="allocation-header">
+                        <span>Needs</span>
+                        <span class="allocation-target">${allocation.type === 'percentage' ? allocation.needs + '%' : formatCurrency(allocation.needs)}</span>
+                    </div>
+                    <div class="allocation-bar-container">
+                        <div class="allocation-bar" style="width: ${Math.min(100, (needs / allocatedNeeds) * 100)}%"></div>
+                    </div>
+                    <div class="allocation-details">
+                        <span class="spent">${formatCurrency(needs)} spent</span>
+                        <span class="budget">${formatCurrency(allocatedNeeds)} budget</span>
+                        <span class="percent ${needs > allocatedNeeds ? 'over' : ''}">${needsPercent}%</span>
+                    </div>
+                </div>
+
+                <div class="allocation-category wants">
+                    <div class="allocation-header">
+                        <span>Wants</span>
+                        <span class="allocation-target">${allocation.type === 'percentage' ? allocation.wants + '%' : formatCurrency(allocation.wants)}</span>
+                    </div>
+                    <div class="allocation-bar-container">
+                        <div class="allocation-bar" style="width: ${Math.min(100, (wants / allocatedWants) * 100)}%"></div>
+                    </div>
+                    <div class="allocation-details">
+                        <span class="spent">${formatCurrency(wants)} spent</span>
+                        <span class="budget">${formatCurrency(allocatedWants)} budget</span>
+                        <span class="percent ${wants > allocatedWants ? 'over' : ''}">${wantsPercent}%</span>
+                    </div>
+                </div>
+
+                <div class="allocation-category savings">
+                    <div class="allocation-header">
+                        <span>Savings</span>
+                        <span class="allocation-target">${allocation.type === 'percentage' ? allocation.savings + '%' : formatCurrency(allocation.savings)}</span>
+                    </div>
+                    <div class="allocation-bar-container">
+                        <div class="allocation-bar" style="width: ${Math.min(100, (savings / allocatedSavings) * 100)}%"></div>
+                    </div>
+                    <div class="allocation-details">
+                        <span class="spent">${formatCurrency(savings)} spent</span>
+                        <span class="budget">${formatCurrency(allocatedSavings)} budget</span>
+                        <span class="percent ${savings > allocatedSavings ? 'over' : ''}">${savingsPercent}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    allocationBreakdownDisplay.innerHTML = allocationHtml;
+}
+
+function renderBills(state) {
+    billsList.innerHTML = '';
+    
+    if (state.bills.length === 0) {
+        billsList.innerHTML = '<p class="empty-state">No bills yet. Add one to track your recurring expenses!</p>';
+        billsTotal.innerHTML = '';
+        return;
+    }
+
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentDay = today.getDate();
+    
+    // Calculate monthly total and upcoming bills
+    let monthlyTotal = 0;
+    const billsWithDates = state.bills.map(bill => {
+        let nextDueDate;
+        let daysUntilDue;
+        
+        if (bill.frequency === 'weekly') {
+            // Next occurrence based on due date as day of week (1-7)
+            const dayOfWeek = bill.dueDate;
+            const daysUntil = (dayOfWeek - today.getDay() + 7) % 7 || 7;
+            nextDueDate = new Date(today);
+            nextDueDate.setDate(nextDueDate.getDate() + daysUntil);
+            daysUntilDue = daysUntil;
+            monthlyTotal += bill.amount * 4.3; // Approximate monthly
+        } else if (bill.frequency === 'monthly') {
+            let nextMonth = currentMonth;
+            let nextYear = today.getFullYear();
+            
+            if (bill.dueDate < currentDay) {
+                nextMonth = (currentMonth + 1) % 12;
+                if (nextMonth === 0) nextYear += 1;
+            }
+            
+            nextDueDate = new Date(nextYear, nextMonth, bill.dueDate);
+            daysUntilDue = Math.floor((nextDueDate - today) / (1000 * 60 * 60 * 24));
+            monthlyTotal += bill.amount;
+        } else if (bill.frequency === 'yearly') {
+            const nextYear = today.getFullYear() + (bill.dueDate < today.getMonth() + 1 ? 1 : 0);
+            nextDueDate = new Date(nextYear, bill.dueDate - 1, 1);
+            daysUntilDue = Math.floor((nextDueDate - today) / (1000 * 60 * 60 * 24));
+            monthlyTotal += bill.amount / 12;
+        }
+        
+        return { ...bill, nextDueDate, daysUntilDue };
+    });
+
+    // Sort by days until due
+    billsWithDates.sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+
+    billsWithDates.forEach(bill => {
+        const listItem = document.createElement('div');
+        listItem.className = 'bill-item';
+        
+        const statusClass = bill.daysUntilDue <= 3 ? 'due-soon' : bill.daysUntilDue <= 7 ? 'due-this-week' : 'due-later';
+        listItem.classList.add(statusClass);
+        
+        const dueText = bill.daysUntilDue === 0 ? 'Today' : 
+                        bill.daysUntilDue === 1 ? 'Tomorrow' :
+                        `${bill.daysUntilDue} days`;
+        
+        listItem.innerHTML = `
+            <div class="bill-details">
+                <strong>${bill.name}</strong>
+                <div class="bill-meta">
+                    <span class="bill-category">${bill.category}</span>
+                    <span class="bill-frequency">${bill.frequency}</span>
+                </div>
+                <div class="bill-due">Due in: ${dueText}</div>
+            </div>
+            <div class="bill-amount-section">
+                <div class="bill-amount">${formatCurrency(bill.amount)}</div>
+                <div class="action-group">
+                    <button data-action="edit" data-id="${bill.id}">Edit</button>
+                    <button data-action="delete" data-id="${bill.id}">Delete</button>
+                </div>
+            </div>
+        `;
+        
+        listItem.querySelector('button[data-action="edit"]').addEventListener('click', () => beginBillEdit(bill.id));
+        listItem.querySelector('button[data-action="delete"]').addEventListener('click', () => deleteBill(bill.id));
+        
+        billsList.appendChild(listItem);
+    });
+
+    // Display monthly total
+    const billsTotalHtml = `
+        <div class="bills-monthly-total">
+            <span>Monthly recurring total:</span>
+            <span class="total-amount">${formatCurrency(monthlyTotal)}</span>
+        </div>
+    `;
+    billsTotal.innerHTML = billsTotalHtml;
+}
+
 function render() {
     const state = loadState();
     const visibleTransactions = getVisibleTransactions(state.transactions, currentDate);
@@ -803,6 +1129,9 @@ function render() {
     renderEvents(state);
     renderGoals(state);
     renderWishlist(state);
+    renderIncomeBreakdown(state);
+    renderAllocationBreakdown(state);
+    renderBills(state);
     renderEncouragement(state);
     renderAuth(state);
     currentMonthEl.textContent = getMonthLabel(currentDate);
@@ -912,6 +1241,53 @@ function clearWishlistEdit() {
     cancelWishlistEdit.classList.add('hidden');
     wishlistForm.reset();
     wishlistForm.classList.add('hidden');
+}
+
+function beginIncomeEdit(id) {
+    const state = loadState();
+    const source = state.incomeBreakdown.find(s => s.id === id);
+    if (!source) return;
+
+    editingIncomeId = id;
+    incomeFormHeading.textContent = 'Edit Income Source';
+    incomeBreakdownSubmitBtn.textContent = 'Update Source';
+    cancelIncomeEdit.classList.remove('hidden');
+
+    incomeNameInput.value = source.name;
+    incomeTypeInput.value = source.type;
+    incomeValueInput.value = source.value;
+    updateIncomeValueLabel();
+    incomeBreakdownForm.classList.remove('hidden');
+    incomeBreakdownForm.scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearIncomeEdit() {
+    editingIncomeId = null;
+    incomeFormHeading.textContent = 'Add Income Source';
+    incomeBreakdownSubmitBtn.textContent = 'Save Source';
+    cancelIncomeEdit.classList.add('hidden');
+    incomeBreakdownForm.reset();
+    incomeBreakdownForm.classList.add('hidden');
+}
+
+function updateIncomeValueLabel() {
+    if (incomeTypeInput.value === 'percentage') {
+        incomeValueLabel.textContent = 'Percentage (%)';
+    } else {
+        incomeValueLabel.textContent = 'Amount';
+    }
+}
+
+function updateAllocationLabels() {
+    if (allocationTypeInput.value === 'percentage') {
+        needsLabel.textContent = 'Needs (%)';
+        wantsLabel.textContent = 'Wants (%)';
+        savingsLabel.textContent = 'Savings (%)';
+    } else {
+        needsLabel.textContent = 'Needs ($)';
+        wantsLabel.textContent = 'Wants ($)';
+        savingsLabel.textContent = 'Savings ($)';
+    }
 }
 
 transactionForm.addEventListener('submit', event => {
@@ -1169,6 +1545,166 @@ cancelWishlistEdit.addEventListener('click', (e) => {
     e.preventDefault();
     clearWishlistEdit();
     render();
+});
+
+showIncomeBreakdownFormBtn.addEventListener('click', () => {
+    if (editingIncomeId) {
+        clearIncomeEdit();
+    } else {
+        incomeBreakdownForm.classList.toggle('hidden');
+    }
+});
+
+incomeTypeInput.addEventListener('change', updateIncomeValueLabel);
+
+incomeBreakdownForm.addEventListener('submit', event => {
+    event.preventDefault();
+    const name = incomeNameInput.value.trim();
+    const type = incomeTypeInput.value;
+    const value = parseFloat(incomeValueInput.value);
+
+    if (!name || Number.isNaN(value) || value < 0) {
+        return;
+    }
+
+    if (type === 'percentage' && value > 100) {
+        alert('Percentage cannot exceed 100%');
+        return;
+    }
+
+    const state = loadState();
+    const source = {
+        id: editingIncomeId || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name,
+        type,
+        value,
+    };
+
+    if (editingIncomeId) {
+        state.incomeBreakdown = state.incomeBreakdown.map(s => s.id === editingIncomeId ? source : s);
+    } else {
+        state.incomeBreakdown.push(source);
+    }
+    saveState(state);
+    clearIncomeEdit();
+    render();
+});
+
+cancelIncomeEdit.addEventListener('click', (e) => {
+    e.preventDefault();
+    clearIncomeEdit();
+    render();
+});
+
+showAllocationFormBtn.addEventListener('click', () => {
+    allocationForm.classList.toggle('hidden');
+    if (!allocationForm.classList.contains('hidden')) {
+        const state = loadState();
+        allocationTypeInput.value = state.allocation.type;
+        needsAmountInput.value = state.allocation.needs;
+        wantsAmountInput.value = state.allocation.wants;
+        savingsAmountInput.value = state.allocation.savings;
+        updateAllocationLabels();
+    }
+});
+
+allocationTypeInput.addEventListener('change', updateAllocationLabels);
+
+allocationForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const state = loadState();
+    const type = allocationTypeInput.value;
+    const needs = parseFloat(needsAmountInput.value) || 0;
+    const wants = parseFloat(wantsAmountInput.value) || 0;
+    const savings = parseFloat(savingsAmountInput.value) || 0;
+
+    // Validation
+    if (needs < 0 || wants < 0 || savings < 0) {
+        alert('All values must be non-negative');
+        return;
+    }
+
+    if (type === 'percentage') {
+        if (needs > 100 || wants > 100 || savings > 100) {
+            alert('Percentages cannot exceed 100%');
+            return;
+        }
+        const total = needs + wants + savings;
+        if (total !== 100) {
+            const confirm_msg = `Total allocation is ${total}%, not 100%. Continue anyway?`;
+            if (!confirm(confirm_msg)) {
+                return;
+            }
+        }
+    }
+
+    state.allocation = { type, needs, wants, savings };
+    saveState(state);
+    allocationForm.classList.add('hidden');
+    render();
+});
+
+cancelAllocationEdit.addEventListener('click', (e) => {
+    e.preventDefault();
+    allocationForm.classList.add('hidden');
+});
+
+showBillForm.addEventListener('click', () => {
+    billForm.classList.toggle('hidden');
+    if (!billForm.classList.contains('hidden')) {
+        billForm.reset();
+        editingBillId = null;
+        billSubmit.textContent = 'Save Bill';
+    }
+});
+
+billForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = billName.value.trim();
+    const amount = parseFloat(billAmount.value);
+    const frequency = billFrequency.value;
+    const dueDate = parseFloat(billDueDate.value);
+    const category = billCategory.value;
+
+    if (!name || !amount || amount <= 0) {
+        alert('Please fill in all fields with valid values');
+        return;
+    }
+
+    if (frequency === 'monthly' && (dueDate < 1 || dueDate > 31)) {
+        alert('Due date must be between 1 and 31');
+        return;
+    }
+
+    if (frequency === 'weekly' && (dueDate < 1 || dueDate > 7)) {
+        alert('Day of week must be between 1 (Monday) and 7 (Sunday)');
+        return;
+    }
+
+    const state = loadState();
+
+    if (editingBillId) {
+        const bill = state.bills.find(b => b.id === editingBillId);
+        if (bill) {
+            bill.name = name;
+            bill.amount = amount;
+            bill.frequency = frequency;
+            bill.dueDate = dueDate;
+            bill.category = category;
+        }
+    } else {
+        addBill({ name, amount, frequency, dueDate, category });
+        state = loadState();
+    }
+
+    saveState(state);
+    clearBillEdit();
+    render();
+});
+
+cancelBillEdit.addEventListener('click', (e) => {
+    e.preventDefault();
+    clearBillEdit();
 });
 
 showSignInBtn.addEventListener('click', () => setAuthMode('sign-in'));
