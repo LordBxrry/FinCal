@@ -3,8 +3,10 @@ const defaultDate = new Date();
 let currentDate = new Date(defaultDate.getFullYear(), defaultDate.getMonth(), 1);
 
 const balanceEl = document.getElementById('balance');
-const inflowEl = document.getElementById('inflow');
-const outflowEl = document.getElementById('outflow');
+const inflowLabel = document.getElementById('inflowLabel');
+const outflowLabel = document.getElementById('outflowLabel');
+const managementScoreEl = document.getElementById('managementScore');
+const scoreBarFill = document.getElementById('scoreBarFill');
 const currentMonthEl = document.getElementById('currentMonth');
 const calendarGrid = document.getElementById('calendarGrid');
 const transactionList = document.getElementById('transactionList');
@@ -59,12 +61,22 @@ const showGoalFormBtn = document.getElementById('showGoalForm');
 const goalTitleInput = document.getElementById('goalTitle');
 const goalTargetInput = document.getElementById('goalTarget');
 const goalDeadlineInput = document.getElementById('goalDeadline');
+const goalFormHeading = document.getElementById('goalFormHeading');
+const goalSubmitBtn = document.getElementById('goalSubmit');
+const cancelGoalEdit = document.getElementById('cancelGoalEdit');
 const wishlistContainer = document.getElementById('wishlist');
 const wishlistForm = document.getElementById('wishlistForm');
 const showWishlistFormBtn = document.getElementById('showWishlistForm');
 const wishTitleInput = document.getElementById('wishTitle');
 const wishCostInput = document.getElementById('wishCost');
+const wishTargetDateInput = document.getElementById('wishTargetDate');
 const wishNotesInput = document.getElementById('wishNotes');
+const wishlistFormHeading = document.getElementById('wishlistFormHeading');
+const wishlistSubmitBtn = document.getElementById('wishlistSubmit');
+const cancelWishlistEdit = document.getElementById('cancelWishlistEdit');
+
+let editingGoalId = null;
+let editingWishlistId = null;
 
 // Stripe integration
 let stripe;
@@ -373,17 +385,42 @@ function renderAuth(state) {
     }
 }
 
+function calculateManagementScore(transactions) {
+    if (transactions.length === 0) return 0;
+    
+    const inflow = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
+    const outflow = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+    const balance = inflow - outflow;
+    
+    if (inflow === 0) return 0;
+    
+    const expenseRatio = outflow / inflow;
+    const balanceRatio = balance / inflow;
+    
+    const expenseScore = Math.min(50, Math.max(0, (1 - expenseRatio) * 100));
+    const savingsScore = Math.min(50, Math.max(0, balanceRatio * 100));
+    
+    return Math.round(expenseScore + savingsScore);
+}
+
 function renderSummary(transactions) {
     const inflow = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
     const outflow = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
     const balance = inflow - outflow;
+    const score = calculateManagementScore(transactions);
 
     balanceEl.textContent = formatCurrency(balance);
-    inflowEl.textContent = formatCurrency(inflow);
-    outflowEl.textContent = formatCurrency(outflow);
+    balanceEl.className = 'balance-value ' + (balance >= 0 ? 'positive' : 'negative');
+    
+    inflowLabel.textContent = `Income: ${formatCurrency(inflow)}`;
+    outflowLabel.textContent = `Expenses: ${formatCurrency(outflow)}`;
+    
+    managementScoreEl.textContent = `${score}/100`;
+    scoreBarFill.style.width = `${score}%`;
+    scoreBarFill.className = 'score-bar-fill ' + (score >= 70 ? 'excellent' : score >= 50 ? 'good' : score >= 30 ? 'fair' : 'poor');
 }
 
-function renderCalendar(transactions) {
+function renderCalendar(transactions, goals, wishlist, events) {
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const dayOfWeek = firstDay.getDay();
@@ -404,21 +441,77 @@ function renderCalendar(transactions) {
         const dailyOutflow = transactionsForDay.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
         const net = dailyInflow - dailyOutflow;
 
+        // Check for goals on this date
+        const goalsForDay = goals.filter(g => g.deadline === dateKey);
+        // Check for wishlist items on this date
+        const wishlistForDay = wishlist.filter(w => w.targetDate === dateKey);
+        // Check for events on this date
+        const eventsForDay = events.filter(e => e.date === dateKey);
+
         const cell = document.createElement('div');
         const netClass = net > 0 ? 'net-positive' : net < 0 ? 'net-negative' : 'net-zero';
         cell.className = `calendar-cell ${netClass}`;
+        
+        let indicatorsHtml = '';
+        if (goalsForDay.length > 0) {
+            const goalDetails = goalsForDay.map(g => `${g.title} - ${formatCurrency(g.target)}`).join('\\n');
+            indicatorsHtml += `<div class="calendar-indicator goal-indicator" data-tooltip="${goalDetails}">🎯 ${goalsForDay.length}</div>`;
+        }
+        if (wishlistForDay.length > 0) {
+            const wishDetails = wishlistForDay.map(w => `${w.title} - ${formatCurrency(w.cost)}`).join('\\n');
+            indicatorsHtml += `<div class="calendar-indicator wish-indicator" data-tooltip="${wishDetails}">💝 ${wishlistForDay.length}</div>`;
+        }
+        if (eventsForDay.length > 0) {
+            const eventDetails = eventsForDay.map(e => `${e.title} - ${formatCurrency(e.budget)}`).join('\\n');
+            indicatorsHtml += `<div class="calendar-indicator event-indicator" data-tooltip="${eventDetails}">📅 ${eventsForDay.length}</div>`;
+        }
+
         cell.innerHTML = `
             <div class="date-label">
                 <span>${day}</span>
                 <span>${transactionsForDay.length}</span>
             </div>
+            <div class="calendar-indicators">${indicatorsHtml}</div>
             <div class="daily-summary">
                 <div class="net-value">${formatCurrency(net)}</div>
                 <div class="net-label">${net > 0 ? 'Gain' : net < 0 ? 'Loss' : 'Even'}</div>
             </div>
         `;
+        
+        // Add hover listeners to indicators
+        const indicators = cell.querySelectorAll('.calendar-indicator');
+        indicators.forEach(indicator => {
+            indicator.addEventListener('mouseenter', (e) => showIndicatorTooltip(e.target));
+            indicator.addEventListener('mouseleave', hideIndicatorTooltip);
+        });
+        
         calendarGrid.appendChild(cell);
     }
+}
+
+function showIndicatorTooltip(element) {
+    const tooltipText = element.getAttribute('data-tooltip');
+    if (!tooltipText) return;
+    
+    // Remove existing tooltip
+    const existing = document.querySelector('.calendar-tooltip');
+    if (existing) existing.remove();
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'calendar-tooltip';
+    tooltip.innerHTML = tooltipText.split('\\n').map(line => `<div>${line}</div>`).join('');
+    
+    document.body.appendChild(tooltip);
+    
+    // Position tooltip near the indicator
+    const rect = element.getBoundingClientRect();
+    tooltip.style.top = (rect.bottom + 8) + 'px';
+    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+}
+
+function hideIndicatorTooltip() {
+    const tooltip = document.querySelector('.calendar-tooltip');
+    if (tooltip) tooltip.remove();
 }
 
 function renderTransactions(transactions) {
@@ -594,12 +687,76 @@ function renderGoals(state) {
                 <div>Target: ${formatCurrency(goal.target)}${goal.deadline ? ` · Due ${goal.deadline}` : ''}</div>
                 <div>Progress: ${progress}%</div>
             </div>
-            <div>
-                <button data-id="${goal.id}">Delete</button>
+            <div class="action-group">
+                <button data-action="edit" data-id="${goal.id}">Edit</button>
+                <button data-action="delete" data-id="${goal.id}">Delete</button>
             </div>
         `;
-        item.querySelector('button').addEventListener('click', () => deleteGoal(goal.id));
+        item.querySelector('button[data-action="delete"]').addEventListener('click', () => deleteGoal(goal.id));
+        item.querySelector('button[data-action="edit"]').addEventListener('click', () => beginGoalEdit(goal.id));
         goalList.appendChild(item);
+    });
+}
+
+function generateWishlistSuggestions(state) {
+    // Calculate current balance
+    const currentBalance = state.transactions.reduce((sum, t) => sum + (t.type === 'income' ? Number(t.amount) : -Number(t.amount)), 0);
+    
+    // Calculate monthly averages
+    const monthCount = state.transactions.length > 0 ? 1 : 0; // Simplified: use current month
+    const totalInflow = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
+    const totalOutflow = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+    const monthlyNet = monthCount > 0 ? (totalInflow - totalOutflow) / Math.max(1, monthCount) : 0;
+    
+    return state.wishlist.map(item => {
+        const itemCost = Number(item.cost) || 0;
+        
+        if (itemCost === 0) {
+            return {
+                ...item,
+                suggestion: 'Set a cost to get purchase timing suggestions',
+                timeline: null,
+                affordable: false,
+            };
+        }
+        
+        if (currentBalance >= itemCost) {
+            return {
+                ...item,
+                suggestion: '💰 You can afford this now!',
+                timeline: 'Purchase immediately',
+                affordable: true,
+            };
+        }
+        
+        const shortfall = itemCost - currentBalance;
+        if (monthlyNet > 0) {
+            const monthsNeeded = Math.ceil(shortfall / monthlyNet);
+            const purchaseDate = new Date();
+            purchaseDate.setMonth(purchaseDate.getMonth() + monthsNeeded);
+            const dateStr = purchaseDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            
+            return {
+                ...item,
+                suggestion: `In about ${monthsNeeded} month${monthsNeeded === 1 ? '' : 's'} (${dateStr})`,
+                timeline: `Monthly savings: ${formatCurrency(monthlyNet)} → Shortfall: ${formatCurrency(shortfall)}`,
+                affordable: false,
+            };
+        } else if (monthlyNet < 0) {
+            return {
+                ...item,
+                suggestion: '📉 Spending exceeds income',
+                timeline: 'Focus on reducing expenses first',
+                affordable: false,
+            };
+        } else {
+            return {
+                ...item,
+                suggestion: 'Neutral cash flow',
+                timeline: 'No monthly surplus to save',
+                affordable: false,
+            };
+        }
     });
 }
 
@@ -610,20 +767,27 @@ function renderWishlist(state) {
         return;
     }
 
-    state.wishlist.forEach(item => {
+    const suggestions = generateWishlistSuggestions(state);
+    suggestions.forEach(item => {
         const listItem = document.createElement('div');
-        listItem.className = 'transaction-item';
+        listItem.className = `transaction-item ${item.affordable ? 'affordable-item' : ''}`;
         listItem.innerHTML = `
             <div class="details">
                 <strong>${item.title}</strong>
                 <div>${item.notes || 'No notes'}</div>
-                <div>Estimated cost: ${formatCurrency(item.cost)}</div>
+                <div>Estimated cost: ${formatCurrency(item.cost)}${item.targetDate ? ` · Target: ${item.targetDate}` : ''}</div>
+                <div class="purchase-suggestion">
+                    <span class="suggestion-main">${item.suggestion}</span>
+                    ${item.timeline ? `<span class="suggestion-detail">${item.timeline}</span>` : ''}
+                </div>
             </div>
-            <div>
-                <button data-id="${item.id}">Remove</button>
+            <div class="action-group">
+                <button data-action="edit" data-id="${item.id}">Edit</button>
+                <button data-action="delete" data-id="${item.id}">Remove</button>
             </div>
         `;
-        listItem.querySelector('button').addEventListener('click', () => deleteWishlistItem(item.id));
+        listItem.querySelector('button[data-action="delete"]').addEventListener('click', () => deleteWishlistItem(item.id));
+        listItem.querySelector('button[data-action="edit"]').addEventListener('click', () => beginWishlistEdit(item.id));
         wishlistContainer.appendChild(listItem);
     });
 }
@@ -632,7 +796,7 @@ function render() {
     const state = loadState();
     const visibleTransactions = getVisibleTransactions(state.transactions, currentDate);
     renderSummary(visibleTransactions);
-    renderCalendar(visibleTransactions);
+    renderCalendar(visibleTransactions, state.goals, state.wishlist, state.events);
     renderTransactions(state.transactions);
     renderMembership(state);
     renderFriendPool(state);
@@ -695,6 +859,59 @@ function clearTransactionEdit() {
     transactionModeInput.value = 'one-time';
     recurrenceFields.classList.add('hidden');
     transactionEndDate.disabled = false;
+}
+
+function beginGoalEdit(id) {
+    const state = loadState();
+    const goal = state.goals.find(g => g.id === id);
+    if (!goal) return;
+
+    editingGoalId = id;
+    goalFormHeading.textContent = 'Edit Goal';
+    goalSubmitBtn.textContent = 'Update Goal';
+    cancelGoalEdit.classList.remove('hidden');
+
+    goalTitleInput.value = goal.title;
+    goalTargetInput.value = goal.target;
+    goalDeadlineInput.value = goal.deadline || '';
+    goalForm.classList.remove('hidden');
+    goalForm.scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearGoalEdit() {
+    editingGoalId = null;
+    goalFormHeading.textContent = 'Create Goal';
+    goalSubmitBtn.textContent = 'Save Goal';
+    cancelGoalEdit.classList.add('hidden');
+    goalForm.reset();
+    goalForm.classList.add('hidden');
+}
+
+function beginWishlistEdit(id) {
+    const state = loadState();
+    const item = state.wishlist.find(w => w.id === id);
+    if (!item) return;
+
+    editingWishlistId = id;
+    wishlistFormHeading.textContent = 'Edit Wishlist Item';
+    wishlistSubmitBtn.textContent = 'Update Item';
+    cancelWishlistEdit.classList.remove('hidden');
+
+    wishTitleInput.value = item.title;
+    wishCostInput.value = item.cost;
+    wishTargetDateInput.value = item.targetDate || '';
+    wishNotesInput.value = item.notes || '';
+    wishlistForm.classList.remove('hidden');
+    wishlistForm.scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearWishlistEdit() {
+    editingWishlistId = null;
+    wishlistFormHeading.textContent = 'Add Wishlist Item';
+    wishlistSubmitBtn.textContent = 'Save Item';
+    cancelWishlistEdit.classList.add('hidden');
+    wishlistForm.reset();
+    wishlistForm.classList.add('hidden');
 }
 
 transactionForm.addEventListener('submit', event => {
@@ -869,7 +1086,11 @@ eventForm.addEventListener('submit', event => {
 });
 
 showGoalFormBtn.addEventListener('click', () => {
-    goalForm.classList.toggle('hidden');
+    if (editingGoalId) {
+        clearGoalEdit();
+    } else {
+        goalForm.classList.toggle('hidden');
+    }
 });
 
 goalForm.addEventListener('submit', event => {
@@ -882,39 +1103,71 @@ goalForm.addEventListener('submit', event => {
         return;
     }
 
-    addGoal({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    const state = loadState();
+    const goal = {
+        id: editingGoalId || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         title,
         target,
         deadline,
-    });
-    goalForm.reset();
-    goalForm.classList.add('hidden');
+    };
+
+    if (editingGoalId) {
+        state.goals = state.goals.map(g => g.id === editingGoalId ? goal : g);
+    } else {
+        state.goals.push(goal);
+    }
+    saveState(state);
+    clearGoalEdit();
+    render();
+});
+
+cancelGoalEdit.addEventListener('click', (e) => {
+    e.preventDefault();
+    clearGoalEdit();
     render();
 });
 
 showWishlistFormBtn.addEventListener('click', () => {
-    wishlistForm.classList.toggle('hidden');
+    if (editingWishlistId) {
+        clearWishlistEdit();
+    } else {
+        wishlistForm.classList.toggle('hidden');
+    }
 });
 
 wishlistForm.addEventListener('submit', event => {
     event.preventDefault();
     const title = wishTitleInput.value.trim();
     const cost = parseFloat(wishCostInput.value) || 0;
+    const targetDate = wishTargetDateInput.value;
     const notes = wishNotesInput.value.trim();
 
     if (!title) {
         return;
     }
 
-    addWishlistItem({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    const state = loadState();
+    const item = {
+        id: editingWishlistId || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         title,
         cost,
+        targetDate,
         notes,
-    });
-    wishlistForm.reset();
-    wishlistForm.classList.add('hidden');
+    };
+
+    if (editingWishlistId) {
+        state.wishlist = state.wishlist.map(w => w.id === editingWishlistId ? item : w);
+    } else {
+        state.wishlist.push(item);
+    }
+    saveState(state);
+    clearWishlistEdit();
+    render();
+});
+
+cancelWishlistEdit.addEventListener('click', (e) => {
+    e.preventDefault();
+    clearWishlistEdit();
     render();
 });
 
