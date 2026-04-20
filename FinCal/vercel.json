@@ -1,10 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "# Skip build",
   "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
     {
       "src": "api/create-payment-intent.js",
       "use": "@vercel/node"
@@ -25,7 +22,8 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/index.html",
+      "status": 200
     }
   ]
 }
