@@ -122,7 +122,7 @@ let cardElement;
 
 function initializeStripeElements() {
     if (!stripe) {
-        stripe = Stripe('pk_test_51QEXAMPLE...'); // Replace with your actual publishable key
+        stripe = Stripe(pk_live_51N7gI6BI32akVK0QObtfnx637yOR7xFNxL9Z4vjpS0bnIclYUZQ1nAmHuHfUrgvsaQV3vVmOEdeZnzfhzP2PmKZl00GX5Xenvx); // Replace with your actual publishable key
         const elements = stripe.elements();
         cardElement = elements.create('card');
         cardElement.mount('#card-element');
