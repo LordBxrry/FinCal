@@ -10,6 +10,14 @@
       "use": "@vercel/static"
     },
     {
+      "src": "api/auth.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/user-data.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/create-payment-intent.js",
       "use": "@vercel/node"
     },

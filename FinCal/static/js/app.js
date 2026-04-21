@@ -1,6 +1,8 @@
 const storageKey = 'financialCalendarState';
+const authTokenKey = 'vercelAuthToken';
 const defaultDate = new Date();
 let currentDate = new Date(defaultDate.getFullYear(), defaultDate.getMonth(), 1);
+let authToken = localStorage.getItem(authTokenKey) || null;
 
 const balanceEl = document.getElementById('balance');
 const inflowLabel = document.getElementById('inflowLabel');
@@ -199,6 +201,51 @@ function loadState() {
 
 function saveState(state) {
     localStorage.setItem(storageKey, JSON.stringify(normalizeState(state)));
+    // Auto-sync to Vercel if logged in
+    if (authToken) {
+        syncStateToVercel(state);
+    }
+}
+
+// Sync user data to Vercel
+async function syncStateToVercel(state) {
+    try {
+        const response = await fetch('/api/user-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+                data: state
+            })
+        });
+        if (!response.ok) {
+            console.warn('Failed to sync to Vercel:', response.statusText);
+        }
+    } catch (error) {
+        console.warn('Error syncing to Vercel:', error);
+    }
+}
+
+// Load user data from Vercel
+async function loadStateFromVercel() {
+    if (!authToken) return null;
+    try {
+        const response = await fetch('/api/user-data', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        if (response.ok) {
+            const result = await response.json();
+            return result.user.data || null;
+        }
+    } catch (error) {
+        console.warn('Error loading from Vercel:', error);
+    }
+    return null;
 }
 
 function saveTransactions(transactions) {
@@ -1713,6 +1760,8 @@ showSignUpBtn.addEventListener('click', () => setAuthMode('sign-up'));
 authButton.addEventListener('click', () => {
     const state = loadState();
     if (state.user.signedIn) {
+        authToken = null;
+        localStorage.removeItem(authTokenKey);
         updateUser({ signedIn: false, email: '', name: '' });
         render();
         return;
@@ -1721,7 +1770,7 @@ authButton.addEventListener('click', () => {
     setAuthMode('sign-in');
 });
 
-authForm.addEventListener('submit', event => {
+authForm.addEventListener('submit', async event => {
     event.preventDefault();
     const name = authNameInput.value.trim();
     const email = authEmailInput.value.trim();
@@ -1732,39 +1781,47 @@ authForm.addEventListener('submit', event => {
         return;
     }
 
-    const existingUser = getUserByEmail(email);
-    if (authMode === 'sign-up') {
-        if (!name) {
-            authError.textContent = 'Please enter your name.';
+    authSubmitBtn.disabled = true;
+    authSubmitBtn.textContent = authMode === 'sign-up' ? 'Creating account...' : 'Signing in...';
+
+    try {
+        const response = await fetch('/api/auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: authMode === 'sign-up' ? 'signup' : 'signin',
+                name,
+                email,
+                password
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            authError.textContent = result.error || 'Authentication failed';
+            authSubmitBtn.disabled = false;
+            authSubmitBtn.textContent = authMode === 'sign-up' ? 'Sign up' : 'Sign in';
             return;
         }
-        if (existingUser) {
-            authError.textContent = 'An account already exists with this email.';
-            return;
-        }
-        const user = {
-            id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            name,
-            email,
-            password,
-        };
-        addUser(user);
-        updateUser({ signedIn: true, email, name });
+
+        // Save auth token and update user state
+        authToken = result.token;
+        localStorage.setItem(authTokenKey, authToken);
+        updateUser({ signedIn: true, email: result.user.email, name: result.user.name });
         authForm.reset();
         authForm.classList.add('hidden');
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.textContent = authMode === 'sign-up' ? 'Sign up' : 'Sign in';
         render();
-        return;
+    } catch (error) {
+        console.error('Auth error:', error);
+        authError.textContent = 'An error occurred. Please try again.';
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.textContent = authMode === 'sign-up' ? 'Sign up' : 'Sign in';
     }
-
-    if (!existingUser || existingUser.password !== password) {
-        authError.textContent = 'Email or password is incorrect.';
-        return;
-    }
-
-    updateUser({ signedIn: true, email: existingUser.email, name: existingUser.name });
-    authForm.reset();
-    authForm.classList.add('hidden');
-    render();
 });
 
 paymentForm.addEventListener('submit', async (event) => {
@@ -1828,4 +1885,15 @@ function changeMonth(offset) {
 document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
 document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
 
-render();
+// Initialize app - load from Vercel if logged in
+async function initializeApp() {
+    if (authToken) {
+        const vercelData = await loadStateFromVercel();
+        if (vercelData) {
+            saveState(vercelData);
+        }
+    }
+    render();
+}
+
+initializeApp();

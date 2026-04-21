@@ -7,11 +7,12 @@ A comprehensive financial calendar web app to track income and expenses, view da
 ### Core Features
 - **Calendar View**: Visual calendar showing daily net value so gains and losses are easy to spot
 - **Income & Expense Tracking**: Add one-time or recurring transactions with optional indefinite end dates
-- **Local Accounts**: Sign up and sign in for new and returning users with local profile storage
+- **Vercel Accounts**: Sign up and sign in to securely save accounts over Vercel
+- **Account Persistence**: All financial data syncs and persists across devices using Vercel KV storage
 - **Budget Goals & Wishlist**: Set savings goals, track progress, and save wishlist items for future purchases
 - **Monthly Summary**: Net balance, total inflow, and outflow calculations
 - **Positive Reinforcement**: Motivational messaging to celebrate progress toward goals
-- **Local Storage**: All data persists in browser local storage
+- **Local & Cloud Storage**: Data persists locally and syncs to Vercel for cross-device access
 - **CSV Export**: Download transaction history as CSV file
 - **Responsive Design**: Works on desktop and mobile devices
 
@@ -98,6 +99,54 @@ vercel
 | `STRIPE_SECRET_KEY` | `sk_test_...` | Your Stripe secret key |
 | `STRIPE_PUBLISHABLE_KEY` | `pk_test_...` | Your Stripe publishable key |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Optional: For webhook verification |
+
+## Vercel KV Setup (Account Persistence)
+
+Account persistence and cross-device sync is powered by Vercel KV (Redis).
+
+### Enable Vercel KV in Your Project
+
+1. **Open Vercel Dashboard**
+   - Go to [vercel.com](https://vercel.com) and sign in
+   - Select your FinCal project
+
+2. **Add KV Storage**
+   - Click **Storage** tab
+   - Click **Create Database** → **KV**
+   - Choose region (pick closest to your users)
+   - Click **Create**
+
+3. **Connect to Your Project**
+   - Vercel automatically adds `KV_URL`, `KV_REST_API_URL`, and `KV_REST_API_TOKEN` to environment variables
+   - These are automatically available in your `/api/auth.js` and `/api/user-data.js` files
+
+4. **Verify Installation**
+   - In Vercel dashboard, check **Settings** → **Environment Variables**
+   - You should see `KV_*` variables listed
+
+### How Account Persistence Works
+
+- **Sign Up**: Creates account in Vercel KV with hashed password and auth token
+- **Sign In**: Validates credentials and returns auth token
+- **Data Sync**: All financial data syncs to Vercel automatically when changes are made
+- **Cross-Device Access**: Sign in on any device and retrieve your complete financial data
+- **Security**: Passwords are hashed with SHA-256; tokens expire after 30 days
+
+### Account Data Stored in Vercel KV
+
+```
+user:{email}
+  ├─ email
+  ├─ name
+  ├─ password (hashed)
+  ├─ token (session token)
+  ├─ createdAt
+  ├─ updatedAt
+  └─ data (all financial transactions, goals, wishlist, etc.)
+
+token:{token}
+  └─ email (for quick token lookup)
+```
 
 ### Update Code with Your Keys
 1. In your deployed project, go to the file editor

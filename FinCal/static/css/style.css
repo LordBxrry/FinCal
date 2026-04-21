@@ -10,10 +10,16 @@ body {
 }
 
 header {
-    padding: 24px;
+    padding: 20px 16px;
     background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
     color: white;
     text-align: center;
+}
+
+@media (max-width: 640px) {
+    header {
+        padding: 16px 12px;
+    }
 }
 
 .hero-note {
@@ -25,9 +31,22 @@ header {
     opacity: 0.9;
 }
 
+@media (max-width: 640px) {
+    .hero-note {
+        font-size: 0.875rem;
+        margin-top: 8px;
+    }
+}
+
 .brand {
     font-size: 2rem;
     font-weight: 700;
+}
+
+@media (max-width: 640px) {
+    .brand {
+        font-size: 1.5rem;
+    }
 }
 
 .subtitle {
@@ -35,10 +54,28 @@ header {
     opacity: 0.9;
 }
 
+@media (max-width: 640px) {
+    .subtitle {
+        font-size: 0.95rem;
+    }
+}
+
 main {
     max-width: 1200px;
     margin: 0 auto;
     padding: 24px;
+}
+
+@media (max-width: 768px) {
+    main {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    main {
+        padding: 12px;
+    }
 }
 
 .summary-panel {
@@ -48,6 +85,19 @@ main {
     margin-bottom: 24px;
 }
 
+@media (max-width: 768px) {
+    .summary-panel {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 640px) {
+    .summary-panel {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
 .summary-card {
     background: white;
     border-radius: 18px;
@@ -55,10 +105,23 @@ main {
     box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
 }
 
+@media (max-width: 640px) {
+    .summary-card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+}
+
 .summary-card h3 {
     margin: 0 0 12px;
     font-size: 0.95rem;
     color: #6b7280;
+}
+
+@media (max-width: 640px) {
+    .summary-card h3 {
+        font-size: 0.85rem;
+    }
 }
 
 .summary-card p {
@@ -71,6 +134,12 @@ main {
     font-size: 2.5rem !important;
     margin-bottom: 12px;
     transition: color 0.3s;
+}
+
+@media (max-width: 640px) {
+    .balance-value {
+        font-size: 1.75rem !important;
+    }
 }
 
 .balance-value.positive {
@@ -93,6 +162,12 @@ main {
     font-weight: 500;
 }
 
+@media (max-width: 640px) {
+    .breakdown-item {
+        font-size: 0.75rem;
+    }
+}
+
 .score-container {
     display: flex;
     flex-direction: column;
@@ -103,6 +178,12 @@ main {
     font-size: 2rem !important;
     font-weight: 700;
     margin: 0;
+}
+
+@media (max-width: 640px) {
+    .score-value {
+        font-size: 1.5rem !important;
+    }
 }
 
 .score-bar {
@@ -167,12 +248,24 @@ main {
     margin-bottom: 24px;
 }
 
+@media (max-width: 640px) {
+    .allocation-summary {
+        gap: 12px;
+    }
+}
+
 .allocation-stat {
     text-align: center;
     padding: 16px;
     background: #f9fafb;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
+}
+
+@media (max-width: 640px) {
+    .allocation-stat {
+        padding: 12px;
+    }
 }
 
 .allocation-stat h4 {
@@ -183,11 +276,23 @@ main {
     letter-spacing: 0.05em;
 }
 
+@media (max-width: 640px) {
+    .allocation-stat h4 {
+        font-size: 0.75rem;
+    }
+}
+
 .allocation-amount {
     margin: 8px 0 0 0;
     font-size: 1.875rem;
     font-weight: 700;
     color: #1f2937;
+}
+
+@media (max-width: 640px) {
+    .allocation-amount {
+        font-size: 1.5rem;
+    }
 }
 
 .allocation-categories {
@@ -196,10 +301,22 @@ main {
     gap: 16px;
 }
 
+@media (max-width: 640px) {
+    .allocation-categories {
+        gap: 12px;
+    }
+}
+
 .allocation-category {
     padding: 12px;
     border-radius: 8px;
     border-left: 4px solid #ccc;
+}
+
+@media (max-width: 640px) {
+    .allocation-category {
+        padding: 10px;
+    }
 }
 
 .allocation-category.needs {
@@ -223,6 +340,14 @@ main {
     margin-bottom: 8px;
     font-weight: 600;
     font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+    .allocation-header {
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.85rem;
+    }
 }
 
 .allocation-target {
@@ -279,10 +404,22 @@ main {
     margin-bottom: 16px;
 }
 
+@media (max-width: 640px) {
+    .allocation-group {
+        margin-bottom: 12px;
+    }
+}
+
 .allocation-group label {
     display: block;
     font-weight: 600;
     margin-bottom: 6px;
+}
+
+@media (max-width: 640px) {
+    .allocation-group label {
+        font-size: 0.95rem;
+    }
 }
 
 .allocation-group input {
@@ -292,6 +429,14 @@ main {
     border-radius: 12px;
     background: #f9fafb;
     margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+    .allocation-group input {
+        padding: 12px 12px;
+        font-size: 16px;
+    }
 }
 
 .allocation-group small {
@@ -301,10 +446,23 @@ main {
     margin-top: 4px;
 }
 
+@media (max-width: 640px) {
+    .allocation-group small {
+        font-size: 0.75rem;
+    }
+}
+
 .form-hint {
     font-size: 0.875rem;
     color: #6b7280;
     margin: 12px 0 16px;
+}
+
+@media (max-width: 640px) {
+    .form-hint {
+        font-size: 0.8rem;
+        margin: 8px 0 12px;
+    }
 }
 
 .bills-panel {
@@ -339,6 +497,15 @@ main {
     transition: border-left-color 0.2s, box-shadow 0.2s;
 }
 
+@media (max-width: 640px) {
+    .bill-item {
+        padding: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
 .bill-item.due-soon {
     border-left-color: #ef4444;
     background: #fef2f2;
@@ -358,10 +525,22 @@ main {
     flex: 1;
 }
 
+@media (max-width: 640px) {
+    .bill-details {
+        width: 100%;
+    }
+}
+
 .bill-details strong {
     display: block;
     font-size: 1rem;
     margin-bottom: 4px;
+}
+
+@media (max-width: 640px) {
+    .bill-details strong {
+        font-size: 0.95rem;
+    }
 }
 
 .bill-meta {
@@ -372,34 +551,11 @@ main {
     color: #6b7280;
 }
 
-.bill-category {
-    background: #e5e7eb;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 500;
-}
-
-.bill-frequency {
-    font-weight: 500;
-    text-transform: capitalize;
-}
-
-.bill-due {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-top: 6px;
-}
-
-.bill-item.due-soon .bill-due {
-    color: #dc2626;
-}
-
-.bill-item.due-this-week .bill-due {
-    color: #ea580c;
-}
-
-.bill-item.due-later .bill-due {
-    color: #1e40af;
+@media (max-width: 640px) {
+    .bill-meta {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 }
 
 .bill-amount-section {
@@ -407,6 +563,13 @@ main {
     flex-direction: column;
     align-items: flex-end;
     gap: 8px;
+}
+
+@media (max-width: 640px) {
+    .bill-amount-section {
+        align-items: flex-start;
+        width: 100%;
+    }
 }
 
 .bill-amount {
@@ -480,6 +643,12 @@ main {
     margin-bottom: 16px;
 }
 
+@media (max-width: 640px) {
+    .month-header {
+        gap: 12px;
+    }
+}
+
 .month-header button {
     border: none;
     background: #2563eb;
@@ -487,6 +656,16 @@ main {
     padding: 10px 16px;
     border-radius: 12px;
     cursor: pointer;
+    min-height: 40px;
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .month-header button {
+        padding: 8px 12px;
+        font-size: 0.875rem;
+        min-height: 36px;
+    }
 }
 
 #currentMonth {
@@ -494,10 +673,35 @@ main {
     font-weight: 700;
 }
 
+@media (max-width: 640px) {
+    #currentMonth {
+        font-size: 1rem;
+    }
+}
+
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 10px;
+}
+
+@media (max-width: 1024px) {
+    .calendar-grid {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .calendar-grid {
+        gap: 6px;
+    }
+}
+
+@media (max-width: 640px) {
+    .calendar-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+    }
 }
 
 .calendar-cell {
@@ -509,6 +713,22 @@ main {
     flex-direction: column;
     justify-content: space-between;
     border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 768px) {
+    .calendar-cell {
+        min-height: 100px;
+        padding: 10px;
+        border-radius: 12px;
+    }
+}
+
+@media (max-width: 640px) {
+    .calendar-cell {
+        min-height: 80px;
+        padding: 8px;
+        border-radius: 10px;
+    }
 }
 
 .calendar-cell.empty {
@@ -592,6 +812,19 @@ main {
     gap: 24px;
 }
 
+@media (max-width: 1024px) {
+    .transaction-panel {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .transaction-panel {
+        gap: 12px;
+    }
+}
+
 .form-card, .list-card {
     background: white;
     border-radius: 24px;
@@ -599,14 +832,33 @@ main {
     box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
 }
 
+@media (max-width: 640px) {
+    .form-card, .list-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+}
+
 .form-card h2, .list-card h2 {
     margin-top: 0;
+}
+
+@media (max-width: 640px) {
+    .form-card h2, .list-card h2 {
+        font-size: 1.25rem;
+    }
 }
 
 .form-card label {
     display: block;
     margin: 16px 0 6px;
     font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .form-card label {
+        font-size: 0.95rem;
+    }
 }
 
 .form-card input,
@@ -616,6 +868,15 @@ main {
     border: 1px solid #d1d5db;
     border-radius: 12px;
     background: #f9fafb;
+    font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+    .form-card input,
+    .form-card select {
+        padding: 12px 12px;
+        font-size: 16px;
+    }
 }
 
 .form-card button {
@@ -628,6 +889,15 @@ main {
     border-radius: 14px;
     font-weight: 700;
     cursor: pointer;
+    min-height: 48px;
+    font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+    .form-card button {
+        margin-top: 16px;
+        min-height: 44px;
+    }
 }
 
 .button-row {
@@ -636,9 +906,22 @@ main {
     margin-top: 20px;
 }
 
+@media (max-width: 640px) {
+    .button-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
 .form-card .button-row button {
     width: auto;
     flex: 1;
+}
+
+@media (max-width: 640px) {
+    .form-card .button-row button {
+        width: 100%;
+    }
 }
 
 .secondary {
@@ -652,6 +935,12 @@ main {
     gap: 8px;
 }
 
+@media (max-width: 640px) {
+    .action-group {
+        gap: 4px;
+    }
+}
+
 .action-group button {
     width: auto;
     padding: 6px 10px;
@@ -660,6 +949,15 @@ main {
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
+    min-height: 36px;
+}
+
+@media (max-width: 640px) {
+    .action-group button {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        min-height: 32px;
+    }
 }
 
 .action-group button[data-action="edit"] {
@@ -680,9 +978,24 @@ main {
     margin-bottom: 16px;
 }
 
+@media (max-width: 640px) {
+    .list-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+
 .button-group {
     display: flex;
     gap: 8px;
+}
+
+@media (max-width: 640px) {
+    .button-group {
+        width: 100%;
+        gap: 6px;
+    }
 }
 
 .button-group button {
@@ -694,6 +1007,16 @@ main {
     cursor: pointer;
     font-weight: 600;
     font-size: 0.875rem;
+    min-height: 36px;
+}
+
+@media (max-width: 640px) {
+    .button-group button {
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 0.75rem;
+        min-height: 36px;
+    }
 }
 
 .list-header button {
@@ -703,6 +1026,15 @@ main {
     padding: 10px 14px;
     border-radius: 12px;
     cursor: pointer;
+    min-height: 40px;
+}
+
+@media (max-width: 640px) {
+    .list-header button {
+        width: 100%;
+        padding: 10px 12px;
+        min-height: 44px;
+    }
 }
 
 #transactionList {
@@ -720,14 +1052,43 @@ main {
     align-items: center;
 }
 
+@media (max-width: 768px) {
+    .transaction-item {
+        padding: 12px;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 640px) {
+    .transaction-item {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px;
+        border-radius: 12px;
+    }
+}
+
 .transaction-item .details {
     max-width: 70%;
+}
+
+@media (max-width: 640px) {
+    .transaction-item .details {
+        max-width: 100%;
+        width: 100%;
+    }
 }
 
 .transaction-item .details strong {
     display: block;
     font-size: 1rem;
     margin-bottom: 6px;
+}
+
+@media (max-width: 640px) {
+    .transaction-item .details strong {
+        font-size: 0.95rem;
+    }
 }
 
 .transaction-item button {
@@ -737,6 +1098,14 @@ main {
     padding: 8px 10px;
     border-radius: 12px;
     cursor: pointer;
+    min-height: 36px;
+}
+
+@media (max-width: 640px) {
+    .transaction-item button {
+        width: 100%;
+        min-height: 40px;
+    }
 }
 
 .purchase-suggestion {
@@ -782,12 +1151,33 @@ main {
     margin-bottom: 24px;
 }
 
+@media (max-width: 1024px) {
+    .membership-panel {
+        gap: 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .membership-panel {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
 .membership-card,
 .group-card {
     background: white;
     border-radius: 24px;
     padding: 24px;
     box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
+}
+
+@media (max-width: 640px) {
+    .membership-card,
+    .group-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
 }
 
 .membership-card h2,
@@ -807,8 +1197,20 @@ main {
     color: #111827;
 }
 
+@media (max-width: 640px) {
+    .benefits-list {
+        padding-left: 16px;
+    }
+}
+
 .benefits-list li {
     margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+    .benefits-list li {
+        font-size: 0.9rem;
+    }
 }
 
 .upgrade-cta {
@@ -822,6 +1224,17 @@ main {
     padding: 10px 14px;
     border-radius: 12px;
     cursor: pointer;
+    min-height: 40px;
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .upgrade-cta {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+        padding: 12px 14px;
+    }
 }
 
 .hidden {
@@ -845,8 +1258,21 @@ main {
     box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
 }
 
+@media (max-width: 640px) {
+    .user-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+}
+
 .user-card h2 {
     margin-top: 0;
+}
+
+@media (max-width: 640px) {
+    .user-card h2 {
+        font-size: 1.25rem;
+    }
 }
 
 .help-panel {
@@ -860,8 +1286,21 @@ main {
     box-shadow: 0 15px 30px rgba(15, 23, 42, 0.06);
 }
 
+@media (max-width: 640px) {
+    .help-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+}
+
 .help-card h2 {
     margin-top: 0;
+}
+
+@media (max-width: 640px) {
+    .help-card h2 {
+        font-size: 1.25rem;
+    }
 }
 
 .help-list {
@@ -870,14 +1309,32 @@ main {
     color: #111827;
 }
 
+@media (max-width: 640px) {
+    .help-list {
+        padding-left: 16px;
+    }
+}
+
 .help-list li {
     margin-bottom: 10px;
+}
+
+@media (max-width: 640px) {
+    .help-list li {
+        font-size: 0.9rem;
+    }
 }
 
 .auth-switch {
     display: flex;
     gap: 10px;
     margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+    .auth-switch {
+        gap: 8px;
+    }
 }
 
 .auth-switch-button {
@@ -888,6 +1345,16 @@ main {
     padding: 10px 14px;
     border-radius: 14px;
     cursor: pointer;
+    min-height: 40px;
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .auth-switch-button {
+        padding: 10px 10px;
+        font-size: 0.875rem;
+        min-height: 36px;
+    }
 }
 
 .auth-switch-button.active {
@@ -923,4 +1390,12 @@ main {
     justify-content: space-between;
     align-items: center;
     gap: 12px;
+}
+
+@media (max-width: 640px) {
+    .action-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
 }
