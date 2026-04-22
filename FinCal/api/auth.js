@@ -1,5 +1,7 @@
 const crypto = require('crypto');
-const { kv } = require('@vercel/kv');
+
+const KV_REST_API_URL = process.env.KV_REST_API_URL;
+const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
@@ -7,6 +9,37 @@ function hashPassword(password) {
 
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
+}
+
+async function kvGet(key) {
+  if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+    throw new Error('KV environment variables not configured');
+  }
+  const response = await fetch(`${KV_REST_API_URL}/get/${key}`, {
+    headers: { Authorization: `Bearer ${KV_REST_API_TOKEN}` }
+  });
+  if (!response.ok) throw new Error(`KV GET failed: ${response.statusText}`);
+  const data = await response.json();
+  return data.result;
+}
+
+async function kvSet(key, value, options = {}) {
+  if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+    throw new Error('KV environment variables not configured');
+  }
+  const url = new URL(`${KV_REST_API_URL}/set/${key}`);
+  if (options.ex) url.searchParams.set('ex', options.ex);
+  
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: { 
+      Authorization: `Bearer ${KV_REST_API_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ value })
+  });
+  if (!response.ok) throw new Error(`KV SET failed: ${response.statusText}`);
+  return await response.json();
 }
 
 module.exports = async (req, res) => {
@@ -37,7 +70,7 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Name is required for signup' });
       }
 
-      const existingUser = await kv.get(userKey);
+      const existingUser = await kvGet(userKey);
       if (existingUser) {
         return res.status(409).json({ error: 'User already exists' });
       }
@@ -53,8 +86,8 @@ module.exports = async (req, res) => {
         data: {}
       };
 
-      await kv.set(userKey, JSON.stringify(userData), { ex: 365 * 24 * 60 * 60 });
-      await kv.set(`token:${token}`, email, { ex: 30 * 24 * 60 * 60 });
+      await kvSet(userKey, JSON.stringify(userData), { ex: 365 * 24 * 60 * 60 });
+      await kvSet(`token:${token}`, email, { ex: 30 * 24 * 60 * 60 });
 
       return res.status(201).json({
         success: true,
@@ -63,7 +96,7 @@ module.exports = async (req, res) => {
         user: { email, name }
       });
     } else if (action === 'signin') {
-      const userStr = await kv.get(userKey);
+      const userStr = await kvGet(userKey);
       if (!userStr) {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
@@ -78,8 +111,8 @@ module.exports = async (req, res) => {
       const token = generateToken();
       user.token = token;
 
-      await kv.set(userKey, JSON.stringify(user), { ex: 365 * 24 * 60 * 60 });
-      await kv.set(`token:${token}`, email, { ex: 30 * 24 * 60 * 60 });
+      await kvSet(userKey, JSON.stringify(user), { ex: 365 * 24 * 60 * 60 });
+      await kvSet(`token:${token}`, email, { ex: 30 * 24 * 60 * 60 });
 
       return res.status(200).json({
         success: true,
