@@ -1,18 +1,4 @@
-// Initialize Redis/KV client
-let kv;
-
-async function initKV() {
-  if (!kv) {
-    try {
-      const { kv: kvClient } = await import('@vercel/kv');
-      kv = kvClient;
-    } catch (error) {
-      console.error('Failed to initialize KV:', error);
-      throw error;
-    }
-  }
-  return kv;
-}
+const { kv } = require('@vercel/kv');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,42 +6,31 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   try {
-    // Initialize KV
-    const kvClient = await initKV();
-
-    // Get token from Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-    // Verify token and get email
-    const email = await kvClient.get(`token:${token}`);
+    const token = authHeader.substring(7);
+    const email = await kv.get(`token:${token}`);
     if (!email) {
-      res.status(401).json({ error: 'Invalid token' });
-      return;
+      return res.status(401).json({ error: 'Invalid token' });
     }
 
     const userKey = `user:${email}`;
 
     if (req.method === 'GET') {
-      // Fetch user data
-      const userStr = await kvClient.get(userKey);
+      const userStr = await kv.get(userKey);
       if (!userStr) {
-        res.status(404).json({ error: 'User not found' });
-        return;
+        return res.status(404).json({ error: 'User not found' });
       }
 
       const user = JSON.parse(userStr);
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         user: {
           email: user.email,
@@ -64,40 +39,33 @@ module.exports = async (req, res) => {
         }
       });
     } else if (req.method === 'POST') {
-      // Save user data
       const { data } = req.body;
 
       if (!data) {
-        res.status(400).json({ error: 'Data is required' });
-        return;
+        return res.status(400).json({ error: 'Data is required' });
       }
 
-      const userStr = await kvClient.get(userKey);
+      const userStr = await kv.get(userKey);
       if (!userStr) {
-        res.status(404).json({ error: 'User not found' });
-        return;
+        return res.status(404).json({ error: 'User not found' });
       }
 
       const user = JSON.parse(userStr);
       user.data = data;
       user.updatedAt = new Date().toISOString();
 
-      // Update user with new data
-      await kvClient.set(userKey, JSON.stringify(user), { ex: 365 * 24 * 60 * 60 });
+      await kv.set(userKey, JSON.stringify(user), { ex: 365 * 24 * 60 * 60 });
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: 'Data saved successfully'
       });
     } else {
       res.setHeader('Allow', 'GET, POST');
-      res.status(405).json({ error: 'Method Not Allowed' });
+      return res.status(405).json({ error: 'Method Not Allowed' });
     }
   } catch (error) {
-    console.error('User data error:', error.message, error.stack);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message
-    });
+    console.error('User data error:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
