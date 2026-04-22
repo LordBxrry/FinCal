@@ -95,19 +95,6 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
-      }
-
-      // Create new user
-      const hashedPassword = hashPassword(password);
-      const token = generateToken();
-      const userData = {
-        email,
-        name,
-        password: hashedPassword,
-        token,
-        createdAt: new Date().toISOString(),
-        data: {} // Empty financial data to start
-      };
 
       // Save user (expires in 365 days)
       await kv.set(userKey, JSON.stringify(userData), { ex: 365 * 24 * 60 * 60 });
