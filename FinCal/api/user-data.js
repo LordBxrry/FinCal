@@ -77,7 +77,10 @@ module.exports = async (req, res) => {
       res.status(405).json({ error: 'Method Not Allowed' });
     }
   } catch (error) {
-    console.error('User data error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('User data error:', error.message, error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };

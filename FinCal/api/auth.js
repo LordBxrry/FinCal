@@ -28,6 +28,11 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Verify KV is available
+    if (!kv) {
+      return res.status(500).json({ error: 'Database service unavailable. Please check Vercel KV setup.' });
+    }
+
     const { action, email, password, name } = req.body;
 
     if (!action || !email || !password) {
@@ -110,7 +115,10 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: 'Invalid action' });
     }
   } catch (error) {
-    console.error('Auth error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Auth error:', error.message, error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
