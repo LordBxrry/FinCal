@@ -1,4 +1,18 @@
-const { kv } = require('@vercel/kv');
+// Initialize Redis/KV client
+let kv;
+
+async function initKV() {
+  if (!kv) {
+    try {
+      const { kv: kvClient } = await import('@vercel/kv');
+      kv = kvClient;
+    } catch (error) {
+      console.error('Failed to initialize KV:', error);
+      throw error;
+    }
+  }
+  return kv;
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,6 +25,9 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Initialize KV
+    const kvClient = await initKV();
+
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -21,7 +38,7 @@ module.exports = async (req, res) => {
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // Verify token and get email
-    const email = await kv.get(`token:${token}`);
+    const email = await kvClient.get(`token:${token}`);
     if (!email) {
       res.status(401).json({ error: 'Invalid token' });
       return;
@@ -31,7 +48,7 @@ module.exports = async (req, res) => {
 
     if (req.method === 'GET') {
       // Fetch user data
-      const userStr = await kv.get(userKey);
+      const userStr = await kvClient.get(userKey);
       if (!userStr) {
         res.status(404).json({ error: 'User not found' });
         return;
@@ -55,7 +72,7 @@ module.exports = async (req, res) => {
         return;
       }
 
-      const userStr = await kv.get(userKey);
+      const userStr = await kvClient.get(userKey);
       if (!userStr) {
         res.status(404).json({ error: 'User not found' });
         return;
@@ -66,7 +83,7 @@ module.exports = async (req, res) => {
       user.updatedAt = new Date().toISOString();
 
       // Update user with new data
-      await kv.set(userKey, JSON.stringify(user), { ex: 365 * 24 * 60 * 60 });
+      await kvClient.set(userKey, JSON.stringify(user), { ex: 365 * 24 * 60 * 60 });
 
       res.status(200).json({
         success: true,
@@ -80,7 +97,7 @@ module.exports = async (req, res) => {
     console.error('User data error:', error.message, error.stack);
     res.status(500).json({ 
       error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: error.message
     });
   }
 };

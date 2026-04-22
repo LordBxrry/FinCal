@@ -1,7 +1,22 @@
 const crypto = require('crypto');
-const { kv } = require('@vercel/kv');
 
-// Hash password with salt
+// Initialize Redis/KV client
+let kv;
+
+async function initKV() {
+  if (!kv) {
+    try {
+      const { kv: kvClient } = await import('@vercel/kv');
+      kv = kvClient;
+    } catch (error) {
+      console.error('Failed to initialize KV:', error);
+      throw error;
+    }
+  }
+  return kv;
+}
+
+// Hash password
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
@@ -28,10 +43,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Verify KV is available
-    if (!kv) {
-      return res.status(500).json({ error: 'Database service unavailable. Please check Vercel KV setup.' });
-    }
+    // Initialize KV
+    const kvClient = await initKV();
 
     const { action, email, password, name } = req.body;
 
@@ -49,10 +62,79 @@ module.exports = async (req, res) => {
       }
 
       // Check if user already exists
-      const existingUser = await kv.get(userKey);
+      const existingUser = await kvClient.get(userKey);
       if (existingUser) {
         res.status(409).json({ error: 'User already exists' });
         return;
+      }
+
+      // Create new user
+      const hashedPassword = hashPassword(password);
+      const token = generateToken();
+      const userData = {
+        email,
+        name,
+        password: hashedPassword,
+        token,
+        createdAt: new Date().toISOString(),
+        data: {} // Empty financial data to start
+      };
+
+      // Save user (expires in 365 days)
+      await kvClient.set(userKey, JSON.stringify(userData), { ex: 365 * 24 * 60 * 60 });
+      
+      // Save token for quick lookup (expires in 30 days)
+      await kvClient.set(`token:${token}`, email, { ex: 30 * 24 * 60 * 60 });
+
+      res.status(201).json({
+        success: true,
+        message: 'Account created successfully',
+        token,
+        user: { email, name }
+      });
+    } else if (action === 'signin') {
+      // Get user
+      const userStr = await kvClient.get(userKey);
+      if (!userStr) {
+        res.status(401).json({ error: 'Invalid email or password' });
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const hashedPassword = hashPassword(password);
+
+      if (user.password !== hashedPassword) {
+        res.status(401).json({ error: 'Invalid email or password' });
+        return;
+      }
+
+      // Generate new token
+      const token = generateToken();
+      user.token = token;
+
+      // Update user with new token
+      await kvClient.set(userKey, JSON.stringify(user), { ex: 365 * 24 * 60 * 60 });
+      
+      // Save new token for quick lookup
+      await kvClient.set(`token:${token}`, email, { ex: 30 * 24 * 60 * 60 });
+
+      res.status(200).json({
+        success: true,
+        message: 'Signed in successfully',
+        token,
+        user: { email, name: user.name }
+      });
+    } else {
+      res.status(400).json({ error: 'Invalid action' });
+    }
+  } catch (error) {
+    console.error('Auth error:', error.message, error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+};
       }
 
       // Create new user
