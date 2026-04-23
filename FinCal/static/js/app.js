@@ -645,6 +645,9 @@ function renderCalendar(transactions, goals, wishlist, events) {
             indicator.addEventListener('mouseleave', hideIndicatorTooltip);
         });
         
+        // Add click handler to view/edit transactions for the day
+        cell.addEventListener('click', () => showDayTransactions(dateKey, transactionsForDay));
+        
         calendarGrid.appendChild(cell);
     }
 }
@@ -672,6 +675,78 @@ function showIndicatorTooltip(element) {
 function hideIndicatorTooltip() {
     const tooltip = document.querySelector('.calendar-tooltip');
     if (tooltip) tooltip.remove();
+}
+
+function showDayTransactions(dateKey, transactionsForDay) {
+    // Create or show a modal for the day's transactions
+    let modal = document.getElementById('dayModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'dayModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalDate"></h3>
+                    <button id="closeModal">&times;</button>
+                </div>
+                <div id="dayTransactionsList"></div>
+                <div class="modal-actions">
+                    <button id="addTransactionToDay">Add Transaction</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        document.getElementById('closeModal').addEventListener('click', () => modal.style.display = 'none');
+        document.getElementById('addTransactionToDay').addEventListener('click', () => {
+            const dateInput = document.getElementById('transactionDate');
+            dateInput.value = dateKey;
+            modal.style.display = 'none';
+            // Scroll to transaction form
+            document.getElementById('transactionForm').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+    
+    document.getElementById('modalDate').textContent = new Date(dateKey).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    const list = document.getElementById('dayTransactionsList');
+    list.innerHTML = '';
+    
+    if (transactionsForDay.length === 0) {
+        list.innerHTML = '<p>No transactions for this day.</p>';
+    } else {
+        transactionsForDay.forEach(transaction => {
+            const item = document.createElement('div');
+            item.className = 'day-transaction-item';
+            item.innerHTML = `
+                <div class="transaction-details">
+                    <strong>${transaction.description}</strong>
+                    <div>${transaction.type} - ${formatCurrency(transaction.amount)}</div>
+                    ${transaction.recurring ? `<div>Recurring ${transaction.frequency || 'monthly'}</div>` : ''}
+                </div>
+                <div class="transaction-actions">
+                    <button onclick="editTransaction('${transaction.id}')">Edit</button>
+                    <button onclick="deleteTransaction('${transaction.id}')">Delete</button>
+                </div>
+            `;
+            list.appendChild(item);
+        });
+    }
+    
+    modal.style.display = 'block';
 }
 
 function renderTransactions(transactions) {
